@@ -5,12 +5,13 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "start": "react-native start",
     "test": "jest"
   },
   "dependencies": {
     "axios": "^1.7.2",
+    "ollama": "^0.5.2",
     "openai": "^4.52.2",
     "react": "18.2.0",
     "react-native": "0.74.2"
