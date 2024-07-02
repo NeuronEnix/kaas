@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import CONFIG from '../common/config';
 import {SYSTEM_PROMPT} from '../common/const';
-import {T_TransactionObj} from '../common/types';
+import {T_SMS_Data, T_TransactionObj} from '../common/types';
 
 export async function isOllamaRunning() {
   try {
@@ -17,9 +17,10 @@ export async function isOllamaRunning() {
 }
 
 export async function smsToTransactionListUsingOpenAI(
-  smsTexts: string[],
+  smsList: T_SMS_Data[],
 ): Promise<T_TransactionObj[]> {
   try {
+    const smsTexts = smsList.map(sms => sms.body);
     const smsTextsLineSeparated = smsTexts.join('\n');
     const response = await axios.post(
       `${CONFIG.OPEN_AI.URL}/chat/completions`,
@@ -49,10 +50,15 @@ export async function smsToTransactionListUsingOpenAI(
         },
       },
     );
-    const data = JSON.parse(
+    const transactionList = JSON.parse(
       response.data.choices[0].message.content,
     ) as T_TransactionObj[];
-    return data;
+    transactionList.forEach((t, i) => {
+      t.date = smsList[i].date;
+      t.body = smsList[i].body;
+      t.address = smsList[i].address;
+    });
+    return transactionList;
   } catch (error: any) {
     console.log(error?.response || error);
     throw error;
