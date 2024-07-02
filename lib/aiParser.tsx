@@ -49,9 +49,10 @@ export async function smsToTransactionListUsingOpenAI(
         },
       },
     );
-    return JSON.parse(response.data.choices[0].message.content) as Promise<
-      T_TransactionObj[]
-    >;
+    const data = JSON.parse(
+      response.data.choices[0].message.content,
+    ) as T_TransactionObj[];
+    return data;
   } catch (error: any) {
     console.log(error?.response || error);
     throw error;

@@ -1,4 +1,10 @@
-export type T_TransactionObj = {
+export type T_SMS_Data = {
+  date: Date;
+  body: string;
+  address: string;
+};
+
+export type T_TransactionObj = T_SMS_Data & {
   isTransaction: boolean;
   transactionType: 'credit' | 'debit';
   from: string | null;

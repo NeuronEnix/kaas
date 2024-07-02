@@ -1,3 +1,7 @@
+# User
+env.json
+.env
+
 # OSX
 #
 .DS_Store

@@ -1,7 +1,9 @@
+import env from '../env.json';
+
 const CONFIG = {
   OPEN_AI: {
-    API_KEY: process.env.OPENAI_API_KEY || '',
-    MODEL: process.env.OPENAI_MODEL ?? 'gpt-3.5-turbo',
+    API_KEY: env.OPENAI_API_KEY ?? '',
+    MODEL: env.OPENAI_MODEL ?? 'gpt-3.5-turbo',
     URL: 'https://api.openai.com/v1',
   },
   OLLAMA: {
