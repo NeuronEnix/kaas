@@ -20,6 +20,9 @@ export async function smsToTransactionListUsingOpenAI(
   smsList: T_SMS_Data[],
 ): Promise<T_TransactionObj[]> {
   try {
+    if (!smsList.length) {
+      return [];
+    }
     const smsTexts = smsList.map(sms => sms.body);
     const smsTextsLineSeparated = smsTexts.join('\n');
     const response = await axios.post(
