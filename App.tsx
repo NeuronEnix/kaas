@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, PermissionsAndroid } from 'react-native';
 import { NativeModules } from 'react-native';
+import { smsToTransactionListUsingOpenAI } from './lib/aiParser';
 
 
 
@@ -25,13 +26,13 @@ async function requestSmsPermission() {
   }
 }
 
-async function fetchSms(setSmsList: any) {
+async function fetchSms(setSmsList: any, setParsedSmsList: any) {
   const hasPermission = await requestSmsPermission();
   if (hasPermission) {
     SmsReader.readSMS()
       .then((smsList: any) => {
         setSmsList(smsList);
-        console.log('SMS list:', smsList);
+        getPasedSmsList(setParsedSmsList, smsList);
       })
       .catch((error: any) => {
         console.error('Error reading SMS:', error);
@@ -39,25 +40,42 @@ async function fetchSms(setSmsList: any) {
   }
 }
 
+function getPasedSmsList(setParsedSmsList: any, smsList: any) {
+  console.log(smsList.length, 'sms length');
+  const smsData: any = smsList.slice(0, 10);
+  console.log(smsData, 'sms data');
+  const parsedData = smsToTransactionListUsingOpenAI(smsData).then((parsedData: any) => {
+    if (parsedData) {
+      setParsedSmsList(parsedData);
+    }
+  });
+  console.log(parsedData, 'parsed data');
+}
+
 const App = () => {
   const [smsList, setSmsList] = useState([]);
+  const [parsedSmsList, setParsedSmsList] = useState([]);
 
   useEffect(() => {
-    fetchSms(setSmsList);
+    fetchSms(setSmsList, setParsedSmsList);
   }, []);
 
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.smsContainer}>
-      <Text style={styles.smsAddress}>From: {item.address}</Text>
-      <Text style={styles.smsBody}>{item.body}</Text>
-      <Text style={styles.smsDate}>Date: {new Date(parseInt(item.date)).toLocaleString()}</Text>
+      <Text style={styles.smsAddress}>Trasaction Type: {item.transactionType}</Text>
+      <Text style={styles.smsAddress}>From: {item.from}</Text>
+      <Text style={styles.smsAddress}>To: {item.to}</Text>
+      <Text style={styles.smsAddress}>Amount: {item.amount}</Text>
+      <Text style={styles.smsAddress}>Currency: {item.currency}</Text>
+      <Text style={styles.smsAddress}>Available Balance:{item.availableBalance}</Text>
+      <Text style={styles.smsAddress}>Reference Number: {item.referenceNumber}</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={smsList}
+        data={parsedSmsList}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
       />

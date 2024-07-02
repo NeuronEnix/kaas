@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 import CONFIG from '../common/config';
-import {SYSTEM_PROMPT} from '../common/const';
-import {T_SMS_Data, T_TransactionObj} from '../common/types';
+import { SYSTEM_PROMPT } from '../common/const';
+import { T_SMS_Data, T_TransactionObj } from '../common/types';
 
 export async function isOllamaRunning() {
   try {
@@ -56,6 +56,7 @@ export async function smsToTransactionListUsingOpenAI(
     const transactionList = JSON.parse(
       response.data.choices[0].message.content,
     ) as T_TransactionObj[];
+    console.log(transactionList);
     transactionList.forEach((t, i) => {
       t.date = smsList[i].date;
       t.body = smsList[i].body;
