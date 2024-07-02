@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import CONFIG from '../common/config';
 import {SYSTEM_PROMPT} from '../common/const';
+import {T_TransactionObj} from '../common/types';
 
 export async function isOllamaRunning() {
   try {
@@ -15,7 +16,9 @@ export async function isOllamaRunning() {
   }
 }
 
-export async function smsToTransactionListUsingOpenAI(smsTexts: string[]) {
+export async function smsToTransactionListUsingOpenAI(
+  smsTexts: string[],
+): Promise<T_TransactionObj[]> {
   try {
     const smsTextsLineSeparated = smsTexts.join('\n');
     const response = await axios.post(
@@ -46,9 +49,12 @@ export async function smsToTransactionListUsingOpenAI(smsTexts: string[]) {
         },
       },
     );
-    return JSON.parse(response.data.choices[0].message.content);
+    return JSON.parse(response.data.choices[0].message.content) as Promise<
+      T_TransactionObj[]
+    >;
   } catch (error: any) {
     console.log(error?.response || error);
+    throw error;
   }
 }
 
