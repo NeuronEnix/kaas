@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 import CONFIG from '../common/config';
-import { SYSTEM_PROMPT } from '../common/const';
-import { T_SMS_Data, T_TransactionObj } from '../common/types';
+import {SYSTEM_PROMPT} from '../common/const';
+import {T_SMS_Data, T_TransactionObj} from '../common/types';
 
 export async function isOllamaRunning() {
   try {
