@@ -15,4 +15,15 @@ export const SYSTEM_PROMPT = {
       - referenceNumber: "if present"
   4. Return the accumulated JSON objects of each transaction SMS as an array of JSON objects.
 `,
+
 };
+
+export const GOOGLE = {
+  URL: {
+    GMAIL_THREADS: "https://gmail.googleapis.com/gmail/v1/users/me/threads"
+  }
+}
+
+export const ASSETS = {
+  LOGO: "./assets/icons/kaasai.png"
+}

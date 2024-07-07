@@ -10,6 +10,15 @@ const CONFIG = {
     URL: 'http://localhost:11434',
     MODEL: 'gemma:2b',
   },
+  GOOGLE: {
+    WEB_CLIENT_ID: env.GOOGLE_WEB_CLIENT_ID ?? '',
+    ANDROID_CLIENT_ID: env.GOOGLE_ANDROID_CLIENT_ID ?? '',
+    SCOPE: [
+      'profile',
+      'email',
+      'https://www.googleapis.com/auth/gmail.readonly',
+    ],
+  },
 };
 
 export default CONFIG;
