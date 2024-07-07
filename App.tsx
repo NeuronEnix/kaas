@@ -1,9 +1,49 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, PermissionsAndroid } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  PermissionsAndroid,
+  Pressable,
+  Image,
+} from 'react-native';
 import { NativeModules } from 'react-native';
 import { smsToTransactionListUsingOpenAI } from './lib/aiParser';
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+} from '@react-native-google-signin/google-signin';
+import SecureDBGateway from './lib/SecureDbGateWay';
+import TransactionList from './components/TransactionList';
+import { T_TransactionObj } from './common/types';
+import CONFIG from './common/config';
+import { ASSETS, GOOGLE } from './common/const';
 
+GoogleSignin.configure({
+  webClientId: CONFIG.GOOGLE.WEB_CLIENT_ID,
+  androidClientId: CONFIG.GOOGLE.ANDROID_CLIENT_ID,
+  scopes: CONFIG.GOOGLE.SCOPE,
+});
 
+const authorizeAndLoadEmails = async (accessToken: string) => {
+  const email = await getEmailThreads(accessToken);
+  return email;
+};
+
+async function getEmailThreads(accessToken: any) {
+  const res = await fetch(
+    GOOGLE.URL.GMAIL_THREADS,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  )
+    .then(response => response.json())
+    .catch(error => {
+      console.error(error);
+    });
+  return res.threads;
+}
 
 const { SmsReader } = NativeModules;
 
@@ -12,12 +52,12 @@ async function requestSmsPermission() {
     const granted = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.READ_SMS,
       {
-        title: "SMS Read Permission",
-        message: "This app needs access to your SMS messages to read them.",
-        buttonNeutral: "Ask Me Later",
-        buttonNegative: "Cancel",
-        buttonPositive: "OK"
-      }
+        title: 'SMS Read Permission',
+        message: 'This app needs access to your SMS messages to read them.',
+        buttonNeutral: 'Ask Me Later',
+        buttonNegative: 'Cancel',
+        buttonPositive: 'OK',
+      },
     );
     return granted === PermissionsAndroid.RESULTS.GRANTED;
   } catch (err) {
@@ -41,44 +81,111 @@ async function fetchSms(setSmsList: any, setParsedSmsList: any) {
 }
 
 function getPasedSmsList(setParsedSmsList: any, smsList: any) {
-  console.log(smsList.length, 'sms length');
   const smsData: any = smsList.slice(0, 10);
-  console.log(smsData, 'sms data');
-  const parsedData = smsToTransactionListUsingOpenAI(smsData).then((parsedData: any) => {
-    if (parsedData) {
-      setParsedSmsList(parsedData);
-    }
-  });
-  console.log(parsedData, 'parsed data');
+  const parsedData = smsToTransactionListUsingOpenAI(smsData).then(
+    (parsed: any) => {
+      if (parsed) {
+        setParsedSmsList(parsed);
+      }
+    },
+  );
 }
 
 const App = () => {
   const [smsList, setSmsList] = useState([]);
   const [parsedSmsList, setParsedSmsList] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState('');
+  const [emailList, setEmailList] = useState([]);
+  const [smsTempData, setTempData] = React.useState<T_TransactionObj[]>([]);
 
+  const GoogleLogin = async () => {
+    await GoogleSignin.hasPlayServices();
+    const userInfo = await GoogleSignin.signIn();
+    const tokens = await GoogleSignin.getTokens();
+    SecureDBGateway.save({
+      id: userInfo.user.id,
+      email: userInfo.user.email,
+      token: tokens.accessToken,
+    });
+    setAccessToken(tokens.accessToken);
+    const email = await getEmailThreads(tokens.accessToken);
+    return userInfo;
+  };
+
+  const GoogleLogout = async () => {
+    await GoogleSignin.signOut();
+    SecureDBGateway.delete();
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const response = await GoogleLogin();
+    } catch (apiError: any) {
+      setError(
+        apiError?.response?.data?.error?.message || 'Something went wrong',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    fetchSms(setSmsList, setParsedSmsList);
-  }, []);
+    // fetchSms(setSmsList, setParsedSmsList);
+    let smsData: T_TransactionObj = {
+      isTransaction: true,
+      transactionType: 'credit',
+      from: 'from test',
+      to: 'to test',
+      amount: '100',
+      currency: '$',
+      availableBalance: '100',
+      referenceNumber: '123456789',
+      date: new Date(),
+      body: 'body test',
+      address: 'address test',
+    };
 
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.smsContainer}>
-      <Text style={styles.smsAddress}>Trasaction Type: {item.transactionType}</Text>
-      <Text style={styles.smsAddress}>From: {item.from}</Text>
-      <Text style={styles.smsAddress}>To: {item.to}</Text>
-      <Text style={styles.smsAddress}>Amount: {item.amount}</Text>
-      <Text style={styles.smsAddress}>Currency: {item.currency}</Text>
-      <Text style={styles.smsAddress}>Available Balance:{item.availableBalance}</Text>
-      <Text style={styles.smsAddress}>Reference Number: {item.referenceNumber}</Text>
-    </View>
-  );
+    setTempData([smsData]);
+
+    const getAccessToken = async () => {
+      const userInfo = await SecureDBGateway.load();
+      if (userInfo) {
+        setAccessToken(userInfo.token);
+        authorizeAndLoadEmails(userInfo.token);
+      }
+    };
+
+    getAccessToken();
+  }, []);
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={parsedSmsList}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => index.toString()}
-      />
+      {accessToken ? (
+        <View style={styles.container}>
+          <Pressable onPress={GoogleLogout} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </Pressable>
+          <TransactionList parsedTransactionList={smsTempData} />
+        </View>
+      ) : (
+        <View style={styles.container}>
+          <Text style={styles.title}>Welcome To</Text>
+          <Image
+            style={styles.logo}
+            source={require(ASSETS.LOGO)}
+          />
+
+          <GoogleSigninButton
+            style={styles.googleButton}
+            size={GoogleSigninButton.Size.Wide}
+            color={GoogleSigninButton.Color.Dark}
+            onPress={handleGoogleLogin}
+            disabled={false}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -86,30 +193,48 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
     backgroundColor: '#fff',
     padding: 16,
   },
-  smsContainer: {
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#f9f9f9',
-    elevation: 2,
-    color: '#666',
+  googleButton: {
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
   },
-  smsAddress: {
-    fontSize: 16,
+  title: {
+    fontSize: 24,
+    justifyContent: 'center',
+    color: '#3e4169',
     fontWeight: 'bold',
-    color: '#666',
+    marginBottom: 20,
+    alignSelf: 'center',
   },
-  smsBody: {
-    marginVertical: 8,
-    fontSize: 14,
-    color: '#666',
+  logo: {
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    marginBottom: 20,
+    resizeMode: 'contain',
+    alignSelf: 'center',
   },
-  smsDate: {
-    fontSize: 12,
-    color: '#666',
+  logoutBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 4,
+    elevation: 3,
+    backgroundColor: 'red',
+    alignSelf: 'center',
+  },
+  logoutText: {
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: 'bold',
+    letterSpacing: 0.25,
+    color: 'white',
   },
 });
 
