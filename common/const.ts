@@ -15,15 +15,23 @@ export const SYSTEM_PROMPT = {
       - referenceNumber: "if present"
   4. Return the accumulated JSON objects of each transaction SMS as an array of JSON objects.
 `,
-
 };
 
 export const GOOGLE = {
   URL: {
-    GMAIL_THREADS: "https://gmail.googleapis.com/gmail/v1/users/me/threads"
-  }
-}
+    GMAIL_THREADS: 'https://gmail.googleapis.com/gmail/v1/users/me/threads',
+  },
+};
 
 export const ASSETS = {
-  LOGO: "./assets/icons/kaasai.png"
-}
+  LOGO: './assets/icons/kaasai.png',
+};
+
+export const TRANSACTION_FILTER_WORD = [
+  // eslint-disable-next-line prettier/prettier
+  'transaction', 'purchase', 'payment', 'deposit', 'withdrawal', 'withdrawn', 'credit', 'debit',
+  // eslint-disable-next-line prettier/prettier
+  'balance', 'transfer', 'charged', 'charge', 'receipt', 'refund', 'ATM', 'POS', 'spent', 'paid',
+  // eslint-disable-next-line prettier/prettier
+  'amount', 'statement', 'available', 'processed', 'settled', 'instalment', 'received',
+];
